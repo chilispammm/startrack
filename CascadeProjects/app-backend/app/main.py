@@ -1,70 +1,211 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.services.email_service import EmailService
 from app.core.logger import logger
 from app.core.config import settings
+from app.middleware.error_handling import ErrorHandlerMiddleware
+from app.middleware.rate_limiter import RateLimitMiddleware, RateLimitConfig
+from app.middleware.request_logger import RequestLoggerMiddleware
+from app.middleware.cache import CacheMiddleware
+from app.middleware.session import SessionMiddleware
+from app.middleware.security import SecurityHeadersMiddleware
+from app.models.schemas import ApplicationCreate, ApplicationResponse
+from app.db.database import init_db, check_db_health
 import tempfile
+from typing import Optional
+import redis
+import uvicorn
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
+# Initialize database
+init_db()
+
+# Initialize Redis client
+redis_client = redis.from_url(settings.REDIS_URL)
+
+# Add middleware in order
+# 1. Error handling
+app.middleware("http")(ErrorHandlerMiddleware(app))
+
+# 2. Security headers
+app.middleware("http")(SecurityHeadersMiddleware(app))
+
+# 3. Session management
+app.middleware("http")(SessionMiddleware(app))
+
+# 4. Request logging
+app.middleware("http")(RequestLoggerMiddleware(app))
+
+# 5. Rate limiting
+rate_limit_config = RateLimitConfig(
+    limit=settings.RATE_LIMIT_REQUESTS,
+    period=settings.RATE_LIMIT_PERIOD
+)
+app.middleware("http")(RateLimitMiddleware(app, rate_limit_config, settings.REDIS_URL))
+
+# 6. Cache middleware
+app.middleware("http")(CacheMiddleware(app, settings.REDIS_URL, settings.CACHE_TIMEOUT))
+
+# Add health check endpoint
+@app.get("/health")
+async def health_check():
+    """
+    Check service health status.
+    """
+    health = {
+        "status": "healthy",
+        "version": settings.VERSION,
+        "environment": settings.ENVIRONMENT.value,
+        "dependencies": {
+            "database": check_db_health(SessionLocal()),
+            "redis": redis_client.ping()
+        }
+    }
+    return health
+
+# Add OpenAPI documentation
+from app.api.docs import custom_openapi
+app.openapi = custom_openapi
+
 # Initialize services
 email_service = EmailService()
 
 # Setup CORS
+@dataclass
+class CORSConfig:
+    origins: List[str] = field(default_factory=lambda: ["http://localhost:5173", "https://your-loveable-domain.com"])
+    methods: List[str] = field(default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    headers: List[str] = field(default_factory=lambda: ["Content-Type", "Authorization"])
+    credentials: bool = True
+    expose_headers: List[str] = field(default_factory=lambda: ["Content-Length", "Content-Type"])
+    max_age: int = 600
+
+# Load CORS configuration from settings
+cors_config = CORSConfig()
+if settings.CORS_ORIGINS:
+    cors_config.origins = settings.CORS_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=cors_config.origins,
+    allow_credentials=cors_config.credentials,
+    allow_methods=cors_config.methods,
+    allow_headers=cors_config.headers,
+    expose_headers=cors_config.expose_headers,
+    max_age=cors_config.max_age
 )
 
-@app.post("/submit")
-async def submit_form(
-    name: str = Form(...),
-    email: str = Form(...),
-    cv: UploadFile = File(None)
+@app.post("/send-application", response_model=ApplicationResponse)
+async def send_application(
+    full_name: str = Form(..., alias="fullName"),
+    user_email: str = Form(..., alias="userEmail"),
+    company_email: str = Form(..., alias="companyEmail"),
+    job_title: str = Form(..., alias="jobTitle"),
+    cv_file: UploadFile = File(None, alias="cvFile")
 ):
     """
-    Handle form submission.
+    Handle job application submission.
     
     Args:
-        name: Applicant's name
-        email: Applicant's email
-        cv: Optional CV file
+        full_name: Applicant's full name
+        user_email: Applicant's email
+        company_email: Company's email
+        job_title: Job position
+        cv_file: CV file (PDF)
     """
     try:
-        # Prepare data for logging
-        data = {
-            "name": name,
-            "email": email,
-            "submission_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        
-        # Save CV if provided
+        # Validate request data
+        application_data = ApplicationCreate(
+            full_name=full_name,
+            user_email=user_email,
+            company_email=company_email,
+            job_title=job_title,
+            cv_file=cv_file.filename if cv_file else None
+        )
+
+        # Validate file
+        if cv_file:
+            if not cv_file.filename.endswith('.pdf'):
+                raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+            if cv_file.size > 5 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="File size must be less than 5MB")
+
+        # Save CV temporarily
         cv_path = None
-        if cv:
+        if cv_file:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-                content = await cv.read()
+                content = await cv_file.read()
                 temp_file.write(content)
                 cv_path = temp_file.name
-        
-        # Send confirmation email
+
+        # Generate email content
+        company_name = company_email.split('@')[1].split('.')[0].capitalize()
+        subject = f"Application for {job_title} at {company_name}"
+        body = (
+            f"Dear Hiring Manager,\n\n"
+            f"I am excited to apply for the {job_title} position at {company_name}. "
+            f"With my skills and passion, I believe I can contribute significantly to your team. "
+            f"Please find my CV attached for your review.\n\n"
+            f"Best regards,\n{full_name}"
+        )
+
+        # Send email
         success, msg = email_service.send_email(
-            recipient_email=email,
-            subject="Application Received",
-            body=f"Thank you {name} for your application. We have received your submission.",
+            recipient_email=company_email,
+            subject=subject,
+            body=body,
             cv_path=cv_path
         )
         
         if not success:
             raise HTTPException(status_code=500, detail=msg)
             
-        return {"message": "Application submitted successfully", "data": data}
+        # Log to sheets
+        data = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "full_name": full_name,
+            "user_email": user_email,
+            "company_email": company_email,
+            "job_title": job_title
+        }
         
+        if not sheets_service.log_submission(data):
+            logger.error("Failed to log submission to sheets")
+            
+        # Clean up
+        if cv_path and os.path.exists(cv_path):
+            os.remove(cv_path)
+            
+        # Return response in frontend-compatible format
+        return ApplicationResponse(
+            success=True,
+            message="Application sent successfully",
+            feedback_url="https://forms.gle/GsT98QMbEYb4HhBA7"
+        )
+        
+    except HTTPException as e:
+        logger.error(f"HTTP error: {str(e)}")
+        raise
+    except ValidationError as e:
+        logger.error(f"Validation error: {str(e)}")
+        return {
+            "success": False,
+            "message": "Validation error",
+            "errors": {
+                "fields": e.errors()
+            }
+        }
     except Exception as e:
-        logger.error(f"Error processing form submission: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error processing application: {str(e)}")
+        return {
+            "success": False,
+            "message": "Internal server error",
+            "errors": {
+                "general": str(e)
+            }
+        }
