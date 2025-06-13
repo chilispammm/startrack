@@ -9,7 +9,7 @@ This repository contains the backend infrastructure for the Africa Product Peers
 pip install -r requirements.txt
 ```
 
-2. Set up SendGrid:
+2. Set up SendGrid(spmtlib library used instead):
    - Create a SendGrid account
    - Set up Single Sender Authentication
    - Create a `.env` file with:
@@ -18,7 +18,7 @@ pip install -r requirements.txt
      FROM_EMAIL=your_verified_sender@example.com
      ```
 
-3. Set up Google Sheets:
+3. Set up Google Sheets(Using json storage locally as an alternative for now):
    - Create a Google Cloud Project
    - Enable Google Sheets API
    - Create service account credentials
