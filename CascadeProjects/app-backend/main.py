@@ -1,8 +1,29 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from app.services.email_service import EmailService
+from app.services.sheets_service import SheetsService
+from app.core.logger import logger
+from app.core.config import settings
+import tempfile
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+import os
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime
+from transformers import pipeline
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+)
+
+# Initialize services
+email_service = EmailService()
+sheets_service = SheetsService()
+
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 import os
@@ -129,8 +150,8 @@ async def send_application(
     content = generate_email_content(full_name, job_title, company_name)
 
     # Send email
-    sender_email = os.getenv("SENDER_EMAIL", "SENDER_EMAIL")
-    sender_password = os.getenv("SENDER_PASSWORD", "SENDER_PASSWORD") ###
+    sender_email = os.getenv("SENDER_EMAIL", "waynechilionje@gmail.com")
+    sender_password = os.getenv("SENDER_PASSWORD", "your-app-password") ###
     success, message = send_email(
         sender_email=sender_email,
         sender_password=sender_password,
@@ -162,8 +183,9 @@ async def send_application(
             logger.error(log_message)
 
     # Return response with feedback link
-    feedback_url = "https://forms.gle/GsT98QMbEYb4HhBA7"  # Replace with your form URL ###
+    feedback_url = "https://forms.gle/xyz123"  # Replace with your form URL ###
     return {
         "message": "Application sent successfully",
         "feedback_url": feedback_url
     }
+>>>>>>> 8e63438b787959ec3abab06874bd718f593263c0
