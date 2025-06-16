@@ -4,31 +4,26 @@ This repository contains the backend infrastructure for the Africa Product Peers
 
 ## Setup Instructions
 
-1. Install dependencies:
+1. Clone the repository
+
+2. Create a `.env` file with the following variables:
 ```bash
-pip install -r requirements.txt
+cp .env.example .env
 ```
 
-2. Set up SendGrid(spmtlib library used instead):
-   - Create a SendGrid account
-   - Set up Single Sender Authentication
-   - Create a `.env` file with:
-     ```
-     SENDGRID_API_KEY=your_api_key_here
-     FROM_EMAIL=your_verified_sender@example.com
-     ```
+3. Update `.env` with your configuration:
+```env
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+REDIS_URL=redis://localhost:6379
+SMTP_USER=your_smtp_user
+SMTP_PASSWORD=your_smtp_password
+OPENAI_API_KEY=your_openai_api_key
+```
 
-3. Set up Google Sheets(Using json storage locally as an alternative for now):
-   - Create a Google Cloud Project
-   - Enable Google Sheets API
-   - Create service account credentials
-   - Download credentials as `credentials.json`
-   - Place `credentials.json` in the project root
-
-4. Run test scripts:
+4. Run with Docker:
 ```bash
-python send_email.py
-python log_submission.py
+docker-compose up --build
 ```
 
 ## Project Structure

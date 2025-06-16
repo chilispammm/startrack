@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.services.email_service import EmailService
+from app.services.ai_service import AIService
+from app.services.feedback_service import FeedbackService
 from app.core.logger import logger
 from app.core.config import settings
 from app.middleware.error_handling import ErrorHandlerMiddleware
@@ -27,6 +29,11 @@ init_db()
 
 # Initialize Redis client
 redis_client = redis.from_url(settings.REDIS_URL)
+
+# Initialize services
+email_service = EmailService()
+ai_service = AIService()
+feedback_service = FeedbackService()
 
 # Add middleware in order
 # 1. Error handling
@@ -128,6 +135,33 @@ async def send_application(
             cv_file=cv_file.filename if cv_file else None
         )
 
+        # Log submission to local file
+        log_data = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "full_name": full_name,
+            "user_email": user_email,
+            "company_email": company_email,
+            "job_title": job_title
+        }
+        
+        # Write to local JSON file
+        log_file = "submissions.json"
+        existing_data = []
+        if os.path.exists(log_file):
+            try:
+                with open(log_file, 'r') as f:
+                    existing_data = json.load(f)
+            except json.JSONDecodeError:
+                pass
+        
+        existing_data.append(log_data)
+        
+        with open(log_file, 'w') as f:
+            json.dump(existing_data, f, indent=2)
+            
+    except Exception as e:
+        logger.error(f"Error logging submission: {str(e)}")
+
         # Validate file
         if cv_file:
             if not cv_file.filename.endswith('.pdf'):
@@ -145,15 +179,18 @@ async def send_application(
 
         # Generate email content
         company_name = company_email.split('@')[1].split('.')[0].capitalize()
+        
+        # Create professional subject
         subject = f"Application for {job_title} at {company_name}"
+        
+        # Create professional body
         body = (
             f"Dear Hiring Manager,\n\n"
-            f"I am excited to apply for the {job_title} position at {company_name}. "
-            f"With my skills and passion, I believe I can contribute significantly to your team. "
+            f"I am excited to apply for the {job_title} position at {company_name}.\n\n"
             f"Please find my CV attached for your review.\n\n"
             f"Best regards,\n{full_name}"
         )
-
+        
         # Send email
         success, msg = email_service.send_email(
             recipient_email=company_email,
@@ -161,6 +198,12 @@ async def send_application(
             body=body,
             cv_path=cv_path
         )
+        
+        if not success:
+            raise HTTPException(status_code=500, detail=msg)
+            
+        # Create feedback URL
+        feedback_url = "https://forms.gle/xyz123"  # Replace with actual feedback form URL
         
         if not success:
             raise HTTPException(status_code=500, detail=msg)
