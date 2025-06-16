@@ -1,11 +1,14 @@
-FROM python:3.11-slim as base
+# Build stage
+FROM python:3.11-slim as builder
 
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    libmagic-dev \
+    libjpeg-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -16,19 +19,32 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Production stage
-FROM base as production
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy only what's needed from base stage
-COPY --from=base /app/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY --from=base /app/app ./app
-COPY --from=base /app/main.py .
-COPY --from=base /app/.env .
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    libmagic1 \
+    libjpeg62-turbo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only what's needed from builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /app/app ./app
+COPY --from=builder /app/main.py .
+COPY --from=builder /app/.env .
 
 # Set environment variables
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    LOG_LEVEL=info
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Set user permissions
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Start command
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--log-level", "info"]

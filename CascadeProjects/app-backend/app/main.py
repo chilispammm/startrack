@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, status
 from fastapi.middleware.cors import CORSMiddleware
 from app.services.email_service import EmailService
 from app.services.ai_service import AIService
@@ -18,6 +18,7 @@ import tempfile
 from typing import Optional
 import redis
 import uvicorn
+from datetime import datetime
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -64,24 +65,56 @@ app.middleware("http")(CacheMiddleware(app, settings.REDIS_URL, settings.CACHE_T
 async def health_check():
     """
     Check service health status.
+    Returns detailed health information about all services.
     """
-    health = {
-        "status": "healthy",
-        "version": settings.VERSION,
-        "environment": settings.ENVIRONMENT.value,
-        "dependencies": {
-            "database": check_db_health(SessionLocal()),
-            "redis": redis_client.ping()
+    try:
+        # Check database connection
+        db_status = await check_db_health()
+        
+        # Check Redis connection
+        redis_status = "healthy"
+        try:
+            redis_client.ping()
+        except Exception as e:
+            redis_status = f"unhealthy: {str(e)}"
+            
+        # Check Supabase connection
+        supabase_status = "healthy"
+        try:
+            await supabase_service.check_connection()
+        except Exception as e:
+            supabase_status = f"unhealthy: {str(e)}"
+            
+        # Check OpenAI connection
+        openai_status = "healthy"
+        try:
+            await ai_service.check_connection()
+        except Exception as e:
+            openai_status = f"unhealthy: {str(e)}"
+            
+        health = {
+            "status": "healthy" if all(s == "healthy" for s in [db_status, redis_status, supabase_status, openai_status]) else "unhealthy",
+            "version": settings.VERSION,
+            "environment": settings.ENVIRONMENT.value,
+            "timestamp": datetime.utcnow().isoformat(),
+            "services": {
+                "database": {"status": db_status},
+                "redis": {"status": redis_status},
+                "supabase": {"status": supabase_status},
+                "openai": {"status": openai_status}
+            }
         }
-    }
-    return health
+        return health
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service unavailable"
+        )
 
 # Add OpenAPI documentation
 from app.api.docs import custom_openapi
 app.openapi = custom_openapi
-
-# Initialize services
-email_service = EmailService()
 
 # Setup CORS
 @dataclass

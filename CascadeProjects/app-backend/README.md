@@ -104,68 +104,91 @@ Response:
 ```
 app-backend/
 ├── app/
-│   ├── core/          # Core application configuration
-│   ├── database/      # Database schemas and migrations
-│   ├── middleware/    # Custom FastAPI middleware
-│   ├── models/        # Pydantic models
-│   ├── services/      # Business logic services
-│   └── main.py        # FastAPI application entry point
-├── tests/            # Test suite
+│   ├── api/           # API routes
+│   ├── core/          # Core application code
+│   ├── models/        # Data models and schemas
+│   ├── services/      # Business logic
+│   │   ├── supabase_service.py  # Database operations
+│   │   ├── email_generator.py   # AI email generation
+│   │   ├── cache_service.py     # Redis caching
+│   │   └── email_service.py     # Email sending
+│   └── tests/         # Test files
+├── alembic/           # Database migrations
+├── tests/             # Additional test files
 ├── docker/           # Docker configuration
-├── logs/             # Application logs
-└── .env              # Environment variables
+└── app/database/     # Database schema
 ```
 
 ## Development
 
-### Local Development
+### Running Tests
 
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Run the application:
-```bash
-uvicorn app.main:app --reload
-```
-
-### Testing
-
-Run tests with:
 ```bash
 pytest
 ```
 
-Coverage report:
+### Running with Docker
+
 ```bash
-pytest --cov=app
+docker-compose up --build
 ```
 
-## Deployment
+### Testing Locally
 
-The application is ready for deployment with Docker. Use the `docker-compose.yml` for local development and testing.
+1. Start Redis:
+```bash
+docker-compose up redis
+```
 
-For production, modify the Docker configuration as needed and use appropriate environment variables.
+2. Start Supabase:
+```bash
+docker-compose up supabase
+```
 
-## Security
+3. Start the application:
+```bash
+docker-compose up app
+```
 
-- All sensitive data is stored encrypted
-- Row Level Security policies in Supabase
-- Environment-based configuration
-- Rate limiting to prevent abuse
-- Secure file upload validation
+## Rate Limiting
+
+- 100 requests per hour per IP
+- 5 requests per minute per IP
+- Rate limit headers in responses:
+  - X-RateLimit-Limit: 100
+  - X-RateLimit-Remaining: 99
+  - X-RateLimit-Reset: 3600
+
+## Error Handling
+
+- All errors are logged with full context
+- User-friendly error messages
+- Detailed error objects in API responses
+- Rate limit handling with retry-after headers
+
+## Caching
+
+- AI-generated email content is cached for 24 hours
+- Frequently accessed data is cached
+- Cache invalidation based on content changes
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create your feature branch
+3. Add tests for new features
+4. Update documentation
+5. Commit your changes
+6. Push to the branch
+7. Create a Pull Request
 
 ## License
 
+MIT License
+
+## Support
+
+For support, please open an issue in the GitHub repository.
 This project is licensed under the MIT License - see the LICENSE file for details
 
 ## Acknowledgments

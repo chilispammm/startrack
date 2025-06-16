@@ -14,14 +14,29 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     depends_on:
       - redis
       - supabase
+      - sentry
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   redis:
     image: redis:alpine
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   supabase:
     image: supabase/supabase
@@ -32,8 +47,56 @@ services:
       - SUPABASE_URL=http://supabase:54321
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+      - JWT_SECRET=${JWT_SECRET}
     volumes:
       - supabase_data:/var/lib/postgresql/data
+      - supabase_storage:/var/lib/supabase/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:54321/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  sentry:
+    image: getsentry/sentry:latest
+    ports:
+      - "9000:9000"
+    environment:
+      - SENTRY_SECRET_KEY=${SENTRY_SECRET_KEY}
+      - SENTRY_POSTGRES_HOST=db
+      - SENTRY_POSTGRES_PORT=5432
+      - SENTRY_POSTGRES_USER=postgres
+      - SENTRY_POSTGRES_PASSWORD=postgres
+      - SENTRY_REDIS_HOST=redis
+      - SENTRY_REDIS_PORT=6379
+      - SENTRY_SERVER_EMAIL=${SMTP_USER}
+      - SENTRY_EMAIL_HOST=${SMTP_HOST}
+      - SENTRY_EMAIL_PORT=${SMTP_PORT}
+      - SENTRY_EMAIL_PASSWORD=${SMTP_PASSWORD}
+    volumes:
+      - sentry_data:/var/lib/sentry/files
+    depends_on:
+      - db
+      - redis
 
 volumes:
   supabase_data:
+  supabase_storage:
+  redis_data:
+  db_data:
+  sentry_data:
