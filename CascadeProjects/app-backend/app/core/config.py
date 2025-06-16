@@ -61,10 +61,6 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE: int = 5 * 1024 * 1024  # 5MB
     ALLOWED_FILE_TYPES: List[str] = ["application/pdf"]
     
-    # External services
-    GOOGLE_SHEETS_CREDENTIALS_PATH: Optional[str] = None
-    GOOGLE_SHEETS_NAME: str = "OpportunityAI_Logs"
-    
     # Health check settings
     HEALTH_CHECK_PATH: str = "/health"
     

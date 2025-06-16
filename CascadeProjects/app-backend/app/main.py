@@ -4,6 +4,7 @@ from app.services.email_service import EmailService
 from app.services.ai_service import AIService
 from app.services.feedback_service import FeedbackService
 from app.services.supabase_service import SupabaseService
+from app.services.cache_service import CacheService
 from app.core.logger import logger
 from app.core.config import settings
 from app.middleware.error_handling import ErrorHandlerMiddleware
@@ -78,7 +79,7 @@ async def health_check():
         except Exception as e:
             redis_status = f"unhealthy: {str(e)}"
             
-        # Check Supabase connection
+        # Check Supabase connection 
         supabase_status = "healthy"
         try:
             await supabase_service.check_connection()
@@ -242,18 +243,7 @@ async def send_application(
         if not success:
             raise HTTPException(status_code=500, detail=msg)
             
-        # Log to sheets
-        data = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "full_name": full_name,
-            "user_email": user_email,
-            "company_email": company_email,
-            "job_title": job_title
-        }
-        
-        if not sheets_service.log_submission(data):
-            logger.error("Failed to log submission to sheets")
-            
+
         # Clean up
         if cv_path and os.path.exists(cv_path):
             os.remove(cv_path)
