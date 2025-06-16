@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     SENDER_EMAIL: Optional[str] = None
     SENDER_PASSWORD: Optional[str] = None
     
+    # Supabase settings
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    
     # Database settings
     DATABASE_URL: Optional[str] = None
     DATABASE_POOL_SIZE: int = 5

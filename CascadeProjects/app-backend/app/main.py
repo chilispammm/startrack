@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from app.services.email_service import EmailService
 from app.services.ai_service import AIService
 from app.services.feedback_service import FeedbackService
+from app.services.supabase_service import SupabaseService
 from app.core.logger import logger
 from app.core.config import settings
 from app.middleware.error_handling import ErrorHandlerMiddleware
@@ -34,6 +34,7 @@ redis_client = redis.from_url(settings.REDIS_URL)
 email_service = EmailService()
 ai_service = AIService()
 feedback_service = FeedbackService()
+supabase_service = SupabaseService()
 
 # Add middleware in order
 # 1. Error handling
