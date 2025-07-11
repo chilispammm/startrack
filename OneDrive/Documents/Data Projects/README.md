@@ -1,21 +1,55 @@
-# Personal AI Projects
+# Data Science Projects
 
-A collection of AI and data science projects showcasing expertise in machine learning, data analysis, and computer vision.
+Welcome to my collection of data science and machine learning projects. This repository showcases my work in various domains of data science, including machine learning, computer vision, and natural language processing.
 
-## Projects
+## Project Categories
 
+### Machine Learning & Statistics
 - [Linear Regression](./linear-regression): Predict car prices using linear models
-- [Stock Price Evolution](./stock-price-evolution): Analyze stock price trends and patterns
+- [ANOVA Test](./anova-test): Statistical analysis of car data
+- [Stock Price Evolution](./stock-price-evolution): Time series analysis of stock prices
+
+### Natural Language Processing
 - [N-gram Language Modeling](./ngram-language-modeling): Implement language models with n-gram techniques
-- [ANOVA Test](./anova-test): Perform statistical analysis using ANOVA
-- [MTCars Analysis](./mtcars-analysis): Analyze car data using statistical methods
-- [Email Spam Classification](./email-spam-classification): Build spam detection models
-- [Amharic Sentiment Analysis](./amharic-sentiment-analysis): Analyze sentiment in Amharic text
-- [Wildlife Image Classification](./wildlife-image-classification): Classify wildlife images using CNN
+- [Email Spam Classification](./email-spam-classification): Machine learning models for spam detection
+- [Amharic Sentiment Analysis](./amharic-sentiment-analysis): Sentiment analysis for Amharic language
+
+### Computer Vision
+- [Wildlife Image Classification](./wildlife-image-classification): CNN-based classification of wildlife images
 - [Eliteserien Football Detection](./eliteserien-football-detection): Object detection in football videos
-- [Road Cracks Detection](./road-cracks-detection): Detect road cracks using computer vision
-- [Job Scraping](./job-scraping): Automate job data collection from websites
+- [Road Cracks Detection](./road-cracks-detection): Unsupervised learning for road crack detection
 
-## Contact
+### Data Collection & Automation
+- [Job Scraping](./job-scraping): Automated job data collection from websites
 
-[LinkedIn](https://www.linkedin.com/in/your-username/) | [Email](mailto:your.email@example.com)
+## Setup Instructions
+
+1. Clone the repository:
+```bash
+git clone https://github.com/chilispammm/PProjects.git
+```
+
+2. Navigate to the project directory:
+```bash
+cd PProjects/DataProjects/[project-name]
+```
+
+3. Install dependencies (if applicable):
+```bash
+pip install -r requirements.txt
+```
+
+4. Run the notebook:
+```bash
+jupyter notebook
+```
+
+## Project Status
+- ✅ Complete
+- 🚧 In Progress
+- 🔍 Research Phase
+- 📝 Planning
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
