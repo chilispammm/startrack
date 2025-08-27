@@ -105,8 +105,5 @@ The centerpiece is a **Streamlit web app** backed by a **Jupyter Notebook workfl
 
 ## 👨‍💻 Author
 
-Developed by **Wayne Chilionje** – Football Data Science & Analytics.
+Developed by **Wayne Chilionje** – Data Scientist and Football Analyst.
 
-```
-
----
