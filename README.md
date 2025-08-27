@@ -1,4 +1,3 @@
-````markdown
 # 🌍 ChiliLab Football Analytics – AFCON 2023 Valuation Project
 
 ## 📌 Overview
