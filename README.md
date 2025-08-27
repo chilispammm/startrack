@@ -58,21 +58,6 @@ The centerpiece is a **Streamlit web app** backed by a **Jupyter Notebook workfl
 
 ---
 
-## 📂 Repository Structure
-
-```
-├── notebooks/
-│   └── Afcon_2023_Analysis.ipynb    # ETL, feature engineering, modelling
-├── data/
-│   ├── final_robust.csv             # Processed dataset
-│   └── AFCON_2023_with_predictionsXGB.xlsx
-├── app.py                           # Streamlit dashboard
-├── requirements.txt                 # Dependencies
-├── README.md                        # Project overview
-```
-
----
-
 ## 📈 Results Snapshot
 
 **Top 10 Undervalued Players (XGBoost Model, % undervaluation):**
