@@ -3,7 +3,7 @@
 ## 🚀 Overview
 
 This project explores **data-driven player valuation** in African football using **AFCON 2023** as a case study.
-By integrating **event data (StatsBomb)**, **performance stats (SofaScore)**, and **market values (Transfermarkt)**, we build a pipeline that:
+By integrating **event data (StatsBomb)** and **market values (Transfermarkt)**, we build a pipeline that:
 
 * Cleans and standardizes player performance data.
 * Engineers football-specific features (e.g., xG, progressive passes, Expected Threat).
