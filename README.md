@@ -1,4 +1,4 @@
-# 🌍 ChiliLab Football Analytics – AFCON 2023 Valuation Project
+# 🌍 Startrack Football Analytics – AFCON 2023 Valuation Project
 
 ## 📌 Overview
 This project implements an **end-to-end football analytics pipeline** using **AFCON 2023 event data** from StatsBomb.  
