@@ -1,94 +1,143 @@
 # 🌍 Startrack Football Analytics – AFCON 2023 Valuation Project
 
 ## 📌 Overview
-This project implements an **end-to-end football analytics pipeline** using **AFCON 2023 event data** from StatsBomb.  
-It combines **ETL pipelines, machine learning modelling, and interactive visualization** into one integrated system for scouting, valuation, and performance analysis.  
 
-The centerpiece is a **Streamlit web app** backed by a **Jupyter Notebook workflow**, designed to:  
-- Collect and process AFCON 2023 event-level data.  
-- Engineer features and player performance metrics.  
-- Train regression models (Linear Regression & XGBoost) to predict market values.  
-- Identify undervalued players (transfer bargains).  
-- Provide interactive dashboards for exploration.  
+Startrack is an open-source, end-to-end football analytics pipeline designed to transform raw match event data into actionable sports intelligence. Using **AFCON 2023 event data** from the StatsBomb API, the project integrates modular ETL engineering, statistical modeling, and interactive dashboards to evaluate player performance and identify undervalued talent in the transfer market.
+
+The ecosystem bridges deep data science with football recruitment workflows, providing a reproducible framework for tournament-based player valuation.
+
+---
+
+## 🏗️ System Architecture
+
+```
+[ StatsBomb API ] ➔ [ Data ETL Pipeline ] ➔ [ Feature Engineering ]
+                                                    │ (PerformanceIndex, AfconBoost)
+                                                    ▼
+[ Interactive Streamlit App ] ◀─── [ XGBoost / Linear Models ]
+
+```
 
 ---
 
 ## ✨ Key Features
-### 🔹 Data ETL & Processing
-- Automated ingestion of **AFCON 2023 match data** from the free StatsBomb API.  
-- Transformation into structured datasets:
-  - Player-level aggregates (xG, passes, shots, minutes).  
-  - Team-level summaries (goals, possession, progressive play).  
-- Saved as clean CSV/Excel outputs for reproducibility.  
 
-### 🔹 Notebook Analysis & Modelling
-- Feature engineering: **PerformanceIndex**, **AfconBoost**, position encoding.  
-- Models:
-  - **Linear Regression** → baseline predictor.  
-  - **XGBoost Regressor** → captures non-linear interactions, improved accuracy.  
-- Outputs:
-  - `PredictedValue` and `PredictedValueXGB` for each player.  
-  - **Undervaluation metrics** (absolute & % difference from current market value).  
-- Export to `AFCON_2023_with_predictionsXGB.xlsx`.  
+### 🔹 1. Data ETL & Processing
 
-### 🔹 Interactive Streamlit Web App
-- Team and player dashboards with **filters & selectors**.  
-- Plots and KPIs:
-  - Passing networks, shot maps, xG contributions.  
-  - Player & team heatmaps (attack vs defense).  
-  - Top undervalued players table.  
-- Sidebar navigation for **exploring AFCON data interactively**.  
+* **Automated Ingestion:** Programmatic data fetching using `statsbombpy` directly from public tournament feeds.
+* **Granular Aggregation:** Converts raw event logs into structured tabular datasets:
+* **Player-level:** Aggregated expected goals (xG), progressive pass completions, shooting volume, and minutes played.
+* **Team-level:** Tactical metrics spanning possession phases, defensive intensity, and territorial dominance.
 
----
 
-## 📊 Example Insights
-- **Ismaïla Sarr** identified as highly undervalued (≈47% by XGBoost model).  
-- Attacking contributions (xG, shots, progressive passes) most predictive of value.  
-- Non-linear tournament boosts captured better by XGBoost vs Linear models.  
+* **Reproducible Outgest:** Formats outputs into clean CSV/Excel assets for downstream analytics.
+
+### 🔹 2. Predictive Modeling & Feature Engineering
+
+* **Custom Metrics:** Engineering of domain-specific features including `PerformanceIndex` (positional efficiency) and `AfconBoost` (tournament-specific weightings).
+* **Comparative Machine Learning:**
+* **Linear Regression:** Establishes a baseline market value predictor.
+* **XGBoost Regressor:** Captures highly non-linear player interactions and tournament performance spikes.
+
+
+* **Value Discrepancy Analysis:** Computes absolute and percentage differentials between model-predicted values and real-world market values to identify market inefficiencies.
+
+### 🔹 3. Streamlit Analytics Dashboard
+
+* **Tactical Visualizations:** Renders passing networks, shot maps, xG contribution charts, and positional heatmaps using `mplsoccer`.
+* **Recruitment Filters:** Search and isolate players by position, age, team, and percentage of undervaluation.
+* **Interactive Exploration:** Side-panel navigation designed for quick scout exploration and performance profile deep-dives.
 
 ---
 
 ## 🛠️ Tech Stack
-- **Python** (3.10+)  
-- **Data**: `statsbombpy`, `pandas`, `numpy`  
-- **Viz**: `matplotlib`, `seaborn`, `plotly`, `mplsoccer`  
-- **ML**: `scikit-learn`, `xgboost`  
-- **App**: `streamlit`  
-- **Docs**: Jupyter Notebook, Markdown  
+
+* **Core Engine:** Python (3.10+)
+* **Data Engineering & Analysis:** `statsbombpy`, `pandas`, `numpy`
+* **Data Visualization:** `matplotlib`, `seaborn`, `plotly`, `mplsoccer`
+* **Machine Learning:** `scikit-learn`, `xgboost`
+* **Application Layer:** `streamlit`
 
 ---
 
-## 📈 Results Snapshot
+## 🚀 Quick Start & Installation
 
-**Top 10 Undervalued Players (XGBoost Model, % undervaluation):**
+### Prerequisites
 
-1. Ismaïla Sarr (47.2%)
-2. Pape Matar Sarr (26.7%)
-3. Abdessamad Ezzalzouli (32.3%)
-4. Jean Michaël Seri (31.5%)
-   ...
+Ensure you have Python 3.10 or higher installed locally.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/startrack-football-analytics.git
+cd startrack-football-analytics
+
+```
+
+### 2. Set Up a Virtual Environment
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+
+```
+
+### 4. Run the Streamlit Dashboard
+
+```bash
+streamlit run app.py
+
+```
 
 ---
 
-## 🌟 Applications
+## 📊 Sample Insights & Key Results
 
-* **Scouting & Recruitment** → identify undervalued AFCON talents.
-* **Transfer Market Analysis** → model-driven valuation framework.
-* **Sports Data Science** → case study of tournament-based player valuation.
-* **Education & Research** → reproducible workflow for applied ML in football analytics.
+* **Market Inefficiencies:** The XGBoost model successfully identified several high-leverage market deviations, including highlighting **Ismaïla Sarr** as approximately 47.2% undervalued relative to his underlying performance metrics during the tournament.
+* **Feature Importance:** Attacking contributions (high-value xG generation, shots, and progressive passes) proved to be the strongest statistical predictors of tournament market valuation.
+* **Model Evaluation:** XGBoost significantly outperformed Linear Regression by effectively capturing non-linear performance variance characteristic of short-form international tournaments.
+
+### Top Undervalued Player Output Snapshot
+
+| Rank | Player | Position | Undervaluation (%) |
+| --- | --- | --- | --- |
+| 1 | Ismaïla Sarr | Forward / Winger | **47.2%** |
+| 2 | Abdessamad Ezzalzouli | Winger | **32.3%** |
+| 3 | Jean Michaël Seri | Midfielder | **31.5%** |
+| 4 | Pape Matar Sarr | Midfielder | **26.7%** |
 
 ---
 
-## 🔮 Next Steps
+## 🔮 Roadmap & Next Steps
 
-* Extend to **other competitions** (PSL, CAF CL, domestic leagues).
-* Add advanced metrics (xThreat, possession value, defensive duels).
-* Deploy Streamlit app to **Streamlit Cloud / Render**.
-* Automate ETL for real-time updates.
+* [ ] **Multi-League Expansion:** Extend ETL pipelines to integrate domestic and continental leagues (e.g., PSL, CAF Champions League).
+* [ ] **Advanced Advanced Metrics:** Integrate positional value modeling such as Expected Threat (xThreat) and defensive duel intensity maps.
+* [ ] **Production Deployment:** Host the web app on Streamlit Cloud or Render with automated GitHub Actions for CI/CD.
+* [ ] **Live Ingestion Automation:** Schedule pipeline updates via cron-jobs/workflows for near real-time data refreshes during active competitions.
+
+---
+
+## 🤝 Contributing
+
+Contributions are what make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
 ## 👨‍💻 Author
 
-Developed by **Wayne Chilionje** – Data Scientist and Football Analyst.
+Developed and maintained by **Wayne Chilionje** – Data Scientist and Football Analyst.
 
+* Feel free to connect on [LinkedIn](https://www.google.com/search?q=your-linkedin-link) or open an issue in the tracker for technical feedback!
